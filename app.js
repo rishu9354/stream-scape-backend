@@ -5,10 +5,9 @@ const cors = require("cors")
 const cookieParser = require("cookie-parser");
 const path = require("path");
 
-const userModel = require("./Models/user");
+const db = require("./config/mongoConfig");
+const authRouter = require("./Routes/index")
 
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken")
 
 // environment variable
 require("dotenv").config();
@@ -25,64 +24,48 @@ app.use(cookieParser());
 app.use(express.urlencoded({extended:true}));
 app.use(express.static(path.join(__dirname,'public')))
 
+app.use("/auth",authRouter);
+
 
 app.get("/",(req,res)=>{
-    console.log("Nodejs working");
-    res.send("nodeJs working")
+    res.send("Node js working..")
 })
 
-// signup
-app.post("/create", (req,res)=>{
-    let {fullname,email,password}= req.body;
-    bcrypt.genSalt(10,(err,salt)=>{
-        bcrypt.hash(password,salt, async(err,hash)=>{
-            let createUser = await userModel.create({
-                fullname,
-                email,
-                password:hash
-            })
-            const token = jwt.sign({ email }, process.env.JWT_SECRET || "secretkey");
-            res.cookie("token", token, { httpOnly: true, secure: true, sameSite: "none" });
-            res.json({
-                success:true,
-                createUser,
-                token,
-                msg:'User data save'
-            })
-            res.send(createUser)
-        })
-    })
-})
+// app.get('/upload/:id',async (req,res)=>{
+//     try {
+//         let showdata = await showModel.findById(req.params.id).populate("episodes");
+//         if(!showdata) return res.status(404).send("show data not found!")
+//     console.log(showdata)
+//     res.render("test",{showdata});
+//     } catch (error) {
+//          console.error(error);
+//         res.status(500).send("Error loading upload page");
+//     }
+// })
 
+// app.get("/show",(req,res)=>{
+//     res.render("showdata")
+// })
+// // upload video routes
 
-// login
-app.post("/login",async (req,res)=>{
-    try{
-        let user = await userModel.findOne({email:req.body.email});
-        if(!user) return res.json({success:false,msg:"User not register!"});
-        // check password
-        const match = await bcrypt.compare(req.body.password, user.password);
-        if (!match) return res.json({ success: false, msg: "Invalid password!" });
+// app.post("/upload", async (req,res,next) => {
+//     try {
+//         console.log(req.body);
+        
+//         const file = req.files.photo;
 
-        const token = jwt.sign({ email: user.email }, process.env.JWT_SECRET || "secretkey");
-        res.cookie("token", token, { httpOnly: true, secure: true, sameSite: "none" });
-
-        res.json({
-            success: true,
-            user,
-            token,
-            msg: "Login successful!"
-        });
-    } catch (err) {
-        console.error("Login error:", err);
-        res.status(500).json({ success: false, msg: "Server error" });
-    }
-
-})
-
+//         // upload to cloudinary
+//         const result = await cloudinary.uploader.upload(file.tempFilePath, (err,result)=>{
+//             console.log(result);
+            
+//         })
+//     } catch (error) {
+        
+//     }
+// })
 
 // dynamic port
-const port = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3001;
 app.listen(PORT,()=>{
     console.log('Server running...');
     
